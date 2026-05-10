@@ -19,6 +19,18 @@ from ylhb_interfaces.msg import SayText, VoiceStatus
 from .qwen_client import QwenClient, QwenClientError
 
 
+VOICE_CLOSE_WORDS = (
+    '关闭语音模式',
+    '退出语音模式',
+    '停止语音模式',
+    '关闭语音',
+    '退出语音',
+    '关掉语音',
+    '结束语音',
+    '关机',
+)
+
+
 def transient_qos() -> QoSProfile:
     return QoSProfile(
         history=HistoryPolicy.KEEP_LAST,
@@ -55,6 +67,8 @@ class VoiceSessionNode(Node):
         self.declare_parameter('asr_empty_silent_first', True)
         self.declare_parameter('asr_fail_prompt_threshold', 2)
         self.declare_parameter('asr_fail_standby_threshold', 3)
+        self.declare_parameter('post_event_listen_pause_sec', 3.0)
+        self.declare_parameter('ignore_empty_asr_after_event_sec', 6.0)
 
         self.enabled = bool(self.get_parameter('enabled').value)
         input_device = str(self.get_parameter('audio_input_device').value)
@@ -74,6 +88,9 @@ class VoiceSessionNode(Node):
         self.asr_empty_silent_first = bool(self.get_parameter('asr_empty_silent_first').value)
         self.asr_fail_prompt_threshold = int(self.get_parameter('asr_fail_prompt_threshold').value)
         self.asr_fail_standby_threshold = int(self.get_parameter('asr_fail_standby_threshold').value)
+        self.post_event_listen_pause_sec = float(self.get_parameter('post_event_listen_pause_sec').value)
+        self.ignore_empty_asr_after_event_sec = float(
+            self.get_parameter('ignore_empty_asr_after_event_sec').value)
 
         self.qwen = QwenClient(str(self.get_parameter('dashscope_base_url').value))
         self.event_pub = self.create_publisher(String, self.get_parameter('voice_command_event_topic').value, 10)
@@ -112,6 +129,8 @@ class VoiceSessionNode(Node):
         self.last_published_text = ''
         self.last_error = ''
         self.last_active_at = 0.0
+        self.pause_listen_until = 0.0
+        self.last_event_published_at = 0.0
 
         self.worker = threading.Thread(target=self.session_loop, daemon=True)
         self.worker.start()
@@ -138,6 +157,8 @@ class VoiceSessionNode(Node):
             self.asr_fail_count = 0
             self.last_error = ''
             self.last_active_at = time.monotonic()
+            self.pause_listen_until = 0.0
+            self.last_event_published_at = 0.0
             self.state = 'WAIT_WAKE'
         self.say('voice_session', f'语音模式已开启，请先说{self.wake_phrase}。', priority=6)
         self.publish_status()
@@ -167,6 +188,10 @@ class VoiceSessionNode(Node):
                 self.state = 'TTS_PAUSED'
                 time.sleep(0.1)
                 continue
+            if time.monotonic() < self.pause_listen_until:
+                self.state = 'WAITING_RESPONSE'
+                time.sleep(0.05)
+                continue
             if self.awakened and time.monotonic() - self.last_active_at > self.session_idle_timeout_sec:
                 with self.lock:
                     self.awakened = False
@@ -188,6 +213,13 @@ class VoiceSessionNode(Node):
             self.handle_asr_text(text)
 
     def handle_empty_asr(self) -> None:
+        now = time.monotonic()
+        if self.last_event_published_at > 0.0 and (
+            now - self.last_event_published_at < self.ignore_empty_asr_after_event_sec
+        ):
+            self.state = 'AWAKENED_IDLE'
+            self.get_logger().info('Ignoring empty ASR shortly after valid voice event.')
+            return
         if not self.awakened:
             self.asr_fail_count = 0
             self.state = 'WAIT_WAKE'
@@ -284,7 +316,7 @@ class VoiceSessionNode(Node):
         normalized = self.normalize_text(raw_text)
         contains_wake = self.has_wake_phrase(normalized)
         command = self.strip_wake_phrase(normalized) if contains_wake else normalized
-        if command in ('关闭语音模式', '退出语音模式', '停止语音模式', '关闭语音', '退出语音', '关机', '关闭'):
+        if any(word in command for word in VOICE_CLOSE_WORDS):
             self.stop_session('语音模式已关闭。', say=True)
             return
 
@@ -327,6 +359,10 @@ class VoiceSessionNode(Node):
         self.event_pub.publish(msg)
         self.last_published_text = text
         self.get_logger().info(f'Voice command event: {msg.data}')
+        now = time.monotonic()
+        self.last_event_published_at = now
+        self.pause_listen_until = now + self.post_event_listen_pause_sec
+        self.asr_fail_count = 0
 
     def stop_session(self, text: str, say: bool) -> None:
         with self.lock:
@@ -334,6 +370,8 @@ class VoiceSessionNode(Node):
             self.awakened = False
             self.state = 'OFF'
             self.is_recording = False
+            self.pause_listen_until = 0.0
+            self.last_event_published_at = 0.0
         if say:
             self.say('voice_session', text, priority=6)
         self.publish_status()

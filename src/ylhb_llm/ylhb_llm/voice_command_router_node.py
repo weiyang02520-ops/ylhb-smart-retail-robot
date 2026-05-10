@@ -13,7 +13,16 @@ from ylhb_interfaces.msg import SayText, TaskStatus
 CONFIRM_WORDS = ('确认', '确定', '就这个', '我要这个', '开始取货', '帮我拿这个')
 MODIFY_WORDS = ('换一个', '不对', '不要这个', '重新推荐')
 SAFETY_WORDS = ('急停', '停止', '停下', '别动', '刹车')
-VOICE_CLOSE_WORDS = ('关闭语音模式', '退出语音模式', '停止语音模式', '关闭语音', '退出语音', '关机', '关闭')
+VOICE_CLOSE_WORDS = (
+    '关闭语音模式',
+    '退出语音模式',
+    '停止语音模式',
+    '关闭语音',
+    '退出语音',
+    '关掉语音',
+    '结束语音',
+    '关机',
+)
 CANCEL_WORDS = ('取消任务', '取消当前任务', '不要了')
 CHECKOUT_WORDS = ('多少钱', '结算', '总价', '一共', '付款')
 MOTION_WORDS = ('前进', '后退', '左转', '右转')

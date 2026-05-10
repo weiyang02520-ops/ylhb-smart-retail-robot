@@ -202,6 +202,8 @@ voice_session_node:
     asr_empty_silent_first: true
     asr_fail_prompt_threshold: 2
     asr_fail_standby_threshold: 3
+    post_event_listen_pause_sec: 3.0
+    ignore_empty_asr_after_event_sec: 6.0
 
 voice_command_router_node:
   ros__parameters:
