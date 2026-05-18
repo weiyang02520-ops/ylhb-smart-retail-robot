@@ -439,22 +439,6 @@ DashScope API Key 不写入代码。运行图片理解、云端 ASR 或云端 TT
 export DASHSCOPE_API_KEY=你的DashScopeKey
 ```
 
----
-
-## 🖼️ Demo 展示建议
-
-为了让仓库更直观，建议后续补充以下素材到 `docs/assets/`：
-
-| 素材 | 建议文件名 | 用途 |
-|---|---|---|
-| 30 秒总览 GIF | `docs/assets/demo-overview.gif` | README 首屏展示完整流程 |
-| UI 截图 | `docs/assets/ui-dashboard.png` | 展示比赛总控台完成度 |
-| 导航动图 | `docs/assets/nav2-demo.gif` | 展示建图、定位、导航效果 |
-| 商品识别截图 | `docs/assets/yolo-detection.png` | 展示 YOLO/TensorRT 感知能力 |
-| 语音交互片段 | `docs/assets/voice-demo.mp4` | 展示唤醒词和销售对话流程 |
-
----
-
 ## 🧪 适合谁参考？
 
 - 正在做 ROS 2 智能车、移动机器人或比赛项目的同学
