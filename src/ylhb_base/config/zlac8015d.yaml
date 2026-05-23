@@ -1,19 +1,36 @@
 zlac8015d_canopen_controller:
   ros__parameters:
+    # SocketCAN 网卡名称。当前接 ZLAC8015D 的 CAN 口为 can1；改线或换适配器后再调整。
     can_interface: can1
+    # 电机驱动器 CANopen 节点 ID，需要与驱动器参数一致。
     node_id: 1
+    # 控制指令发送频率，单位：Hz。频率越高响应越细，但 CAN 总线负载也越高。
     control_rate_hz: 50.0
+    # 读取电机实际速度并发布里程计的频率，单位：Hz。
     feedback_rate_hz: 30.0
+    # 故障状态检查频率，单位：Hz。
     fault_check_rate_hz: 2.0
+    # CAN 报文轮询频率，单位：Hz。需要高于控制和反馈频率。
     can_poll_rate_hz: 200.0
+    # cmd_vel 超时时间，单位：秒。超过该时间未收到速度指令会停车。
     cmd_timeout_sec: 0.5
+    # SDO 请求超时时间，单位：毫秒。通信不稳定时可适当增大。
     sdo_timeout_ms: 200
+    # 底盘状态日志输出频率，单位：Hz。
     status_rate_hz: 1.0
+    # 启动时是否自动清除驱动器故障。调试故障原因时建议保持 false。
     fault_reset_on_start: false
+    # 节点退出时是否发送停车命令，通常保持 true。
     stop_on_exit: true
+    # 是否使用 PDO 通信。当前配置使用 SDO 控制，保持 false。
     use_pdo: false
+    # 目标速度单位换算：发送给驱动器的速度单位 / RPM。若驱动器显示速度与期望不一致再校准。
     target_velocity_unit_per_rpm: 1.0
+    # 实际速度单位换算：驱动器反馈速度单位 / RPM。影响里程计速度和距离估计。
     actual_velocity_unit_per_rpm: 10.0
+    # 驱动器内部加速度参数，单位取决于 ZLAC8015D 协议。数值越大加速越快。
     profile_acceleration: 100
+    # 驱动器内部减速度参数，单位取决于 ZLAC8015D 协议。数值越大减速越快。
     profile_deceleration: 100
+    # 本地协议文档目录，仅用于调试/查阅，不影响运行控制逻辑。
     protocol_docs_dir: "/home/nvidia/ros2_ws/官方通信协议"

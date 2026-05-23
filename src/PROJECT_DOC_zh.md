@@ -1664,8 +1664,14 @@ ros2 launch ylhb_base mapping.launch.py
 
 ```bash
 source /opt/ros/humble/setup.bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+ros2 run teleop_twist_keyboard teleop_twist_keyboard \
+  --ros-args \
+  -p speed:=0.08 \
+  -p turn:=0.25
 ```
+
+其中 `speed` 是线速度，单位 `m/s`；`turn` 是角速度，单位 `rad/s`。
 
 ### 4.3 建图时怎么开车
 
@@ -1691,7 +1697,8 @@ source ~/ros2_ws/install/setup.bash
 # 调用 Nav2 提供的终端保存工具
 # 参数讲解：
 #   -f my_map: 代表你要保存的文件基础名（File）。系统会自动生成对应的 my_map.yaml (元数据表) 和 my_map.pgm (二维栅格画布)
-ros2 run nav2_map_server map_saver_cli -f my_map
+#   save_map_timeout:=10.0: 等待 /map 的最长时间，避免默认 2 秒在当前 SLAM 发布节奏下偶发超时
+ros2 run nav2_map_server map_saver_cli -f my_map --ros-args -p save_map_timeout:=10.0
 ```
 
 输出：
@@ -1707,6 +1714,10 @@ UI 的“保存地图”按钮走 `system_supervisor_node` 的 `save_map` 命令
 ~/ros2_ws/src/maps/<map_name>.yaml
 ~/ros2_ws/src/maps/<map_name>.pgm
 ```
+
+移动端 `/api/debug/mapping/save` 也走同一类 `map_saver_cli` 保存逻辑。两个入口都已统一设置 `save_map_timeout:=10.0`，失败时会保留 `map_saver_cli` 的输出，便于区分 `/map` 超时、路径权限、目录不存在等问题。
+
+当前仓库默认地图 `~/ros2_ws/src/my_map.yaml/.pgm` 已更新为实机保存结果，地图尺寸 `195 x 333`，分辨率 `0.05 m/pix`。
 
 注意：保存目录和导航默认地图是两个概念。`navigation.launch.py` 和 supervisor 的 `start_navigation` 默认仍读取 `~/ros2_ws/src/my_map.yaml`；如果要使用 UI 保存的新地图，需要复制成默认地图，或启动导航时显式传 `map:=~/ros2_ws/src/maps/<map_name>.yaml`。
 

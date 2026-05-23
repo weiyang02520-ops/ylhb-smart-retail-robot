@@ -250,7 +250,10 @@ class SystemSupervisorNode(Node):
             safe_name = time.strftime('retail_map_%Y%m%d_%H%M')
         os.makedirs(self.map_output_dir, exist_ok=True)
         map_prefix = os.path.join(self.map_output_dir, safe_name)
-        cmd = self.wrap_command(f'ros2 run nav2_map_server map_saver_cli -f {map_prefix}')
+        cmd = self.wrap_command(
+            f'ros2 run nav2_map_server map_saver_cli -f {map_prefix} '
+            '--ros-args -p save_map_timeout:=10.0'
+        )
         try:
             completed = subprocess.run(
                 cmd,
@@ -269,7 +272,7 @@ class SystemSupervisorNode(Node):
             self.set_result('save_map', True, f'地图已保存: {map_prefix}.yaml')
         else:
             detail = (completed.stderr or completed.stdout or '').strip().splitlines()
-            message = detail[-1] if detail else f'map_saver_cli exited {completed.returncode}'
+            message = '\n'.join(detail[-5:]) if detail else f'map_saver_cli exited {completed.returncode}'
             self.set_result('save_map', False, f'保存地图失败: {message}')
 
     def emergency_stop(self) -> None:

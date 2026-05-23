@@ -53,24 +53,21 @@
 
   <!-- ================= 连接关节 (Joints) ================= -->
   
-  <!-- Base 到 IMU 的静态固定连接 
-       依据测量：相对轮间距中心向后(原正X为右，则负Y为后？等等，依据用户定义：正Y=前方，正X=右方。则负Y=-0.009为向后9mm)，正Z轴61mm -->
+  <!-- Base 到 IMU 的静态固定连接 -->
   <joint name="base_to_imu_joint" type="fixed">
     <parent link="base_link"/>
     <child link="imu_link"/>
-    <!-- 依据测量，IMU安装在车体正后方9mm处。
-         匹配 ROS 前左上标准坐标系 (X为前，Y为左，Z为上)： -->
-    <origin xyz="-0.009 0 0.061" rpy="0 0 0"/>
+    <!-- 匹配 ROS 前左上标准坐标系 (X为前，Y为左，Z为上) -->
+    <origin xyz="0.280 0 0.107" rpy="0 0 0"/>
   </joint>
 
   <joint name="base_to_laser_joint" type="fixed">
     <parent link="base_link"/>
     <child link="laser_link"/>
-    <!-- 依据测量，雷达安装在车体正前方152mm处 (x = 0.152)。
-         方向标定：雷达自身输出的数据 Y轴正方向 对准了 小车的车头(正前X轴方向)。
+    <!-- 方向标定：雷达自身输出的数据 Y轴正方向 对准了 小车的车头(正前X轴方向)。
          这意味着雷达自身的 X轴 指向了小车的右侧 (-Y方向)。
          因此，雷达坐标系相对于小车主坐标系顺时针旋转了90度，即 Yaw = -1.5707963 -->
-    <origin xyz="0.152 0 0.172" rpy="0 0 -1.5707963"/>
+    <origin xyz="0.090 0 0.1805" rpy="0 0 -1.5707963"/>
   </joint>
 
 </robot>

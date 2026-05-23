@@ -73,7 +73,17 @@ class ProcessManager:
         if not safe_name.replace('_', '').replace('-', '').isalnum():
             raise ValueError('map_name must contain only letters, numbers, underscore or hyphen')
         target = self.default_map_path.with_name(safe_name)
-        command = ['ros2', 'run', 'nav2_map_server', 'map_saver_cli', '-f', str(target)]
+        command = [
+            'ros2',
+            'run',
+            'nav2_map_server',
+            'map_saver_cli',
+            '-f',
+            str(target),
+            '--ros-args',
+            '-p',
+            'save_map_timeout:=10.0',
+        ]
         self._logger.info('saving map command=%s', command)
         process = subprocess.Popen(
             command,

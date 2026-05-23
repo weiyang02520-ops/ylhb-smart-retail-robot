@@ -309,7 +309,26 @@ netdev_matches_usb_id() {
   return 1
 }
 
+pcan_sysfs_netdev() {
+  for pcan_path in /sys/class/pcan/pcanusb*; do
+    [ -e "\$pcan_path" ] || continue
+    [ -r "\$pcan_path/ndev" ] || continue
+    netdev="\$(cat "\$pcan_path/ndev" 2>/dev/null || true)"
+    [ -n "\$netdev" ] || continue
+    [ -e "/sys/class/net/\$netdev" ] || continue
+    printf '%s\n' "\$netdev"
+    return 0
+  done
+  return 1
+}
+
 first_pcan_netdev() {
+  netdev="\$(pcan_sysfs_netdev || true)"
+  if [ -n "\$netdev" ]; then
+    printf '%s\n' "\$netdev"
+    return 0
+  fi
+
   if [ -e "/sys/class/net/\$CAN_IFACE" ] && netdev_matches_usb_id "\$CAN_IFACE" "\$PCAN_VID" "\$PCAN_PID"; then
     printf '%s\n' "\$CAN_IFACE"
     return 0
@@ -434,8 +453,9 @@ udevadm control --reload-rules 2>/dev/null || service udev reload
 udevadm trigger 2>/dev/null || true
 systemctl daemon-reload
 
-echo "- 正在启用并启动 robot-hardware-guard.service..."
-systemctl enable --now robot-hardware-guard.service
+echo "- 正在启用并重启 robot-hardware-guard.service..."
+systemctl enable robot-hardware-guard.service
+systemctl restart robot-hardware-guard.service
 sleep 2
 
 echo "================================================="

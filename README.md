@@ -71,7 +71,7 @@
 | Jetson 本机部署 | ✅ 可用 | 依赖安装、构建、运行入口集中在 `scripts/` |
 | ZLAC8015D 底盘 | ✅ 默认 | 默认使用 PEAK PCAN-USB 暴露的 SocketCAN `can1`，速率 500000 |
 | STM32 底盘 | ✅ 回退 | `base_backend:=stm32` 可切换到旧串口链路 |
-| SLAM / Nav2 | ✅ 可用 | 默认地图为 `src/my_map.yaml`，UI 可保存新地图到 `src/maps/` |
+| SLAM / Nav2 | ✅ 可用 | 默认地图为 `src/my_map.yaml`，当前地图尺寸 `195 x 333`；UI 和移动端保存地图已统一 10 秒等待超时 |
 | ZED + YOLO26 | ✅ 可用 | 默认加载 Jetson 本机 TensorRT engine |
 | 多模态任务层 | ✅ 可用 | 支持任务书图片、文字指令、商品推荐和购物车状态 |
 | 连续语音 / TTS | ✅ 可用 | 默认面向 eMeet Luna，唤醒后进入连续对话 |
@@ -494,6 +494,19 @@ ros2 topic echo /retail_ai/voice_session_status
 ./scripts/run_on_jetson.sh mapping
 ```
 
+建图时推荐使用低速键盘遥控：
+
+```bash
+source /opt/ros/humble/setup.bash
+
+ros2 run teleop_twist_keyboard teleop_twist_keyboard \
+  --ros-args \
+  -p speed:=0.08 \
+  -p turn:=0.25
+```
+
+其中 `speed` 是线速度，单位 `m/s`；`turn` 是角速度，单位 `rad/s`。
+
 启动导航：
 
 ```bash
@@ -506,11 +519,21 @@ ros2 topic echo /retail_ai/voice_session_status
 ~/ros2_ws/src/my_map.yaml
 ```
 
+当前仓库随附的默认地图来自实机 SLAM 保存，地图图像为 `195 x 333`，分辨率 `0.05 m/pix`。
+
 UI 的“保存地图”默认写入：
 
 ```text
 ~/ros2_ws/src/maps/<map_name>.yaml/.pgm
 ```
+
+UI 和移动端调试接口保存地图时都会调用：
+
+```bash
+ros2 run nav2_map_server map_saver_cli -f <target> --ros-args -p save_map_timeout:=10.0
+```
+
+这个等待时间用于覆盖 SLAM Toolbox 发布 `/map` 的实际节奏，避免 Nav2 默认 2 秒订阅等待偶发超时。
 
 导航默认仍读取 `~/ros2_ws/src/my_map.yaml`。要使用新保存的地图，需要复制成默认地图或启动导航时覆盖 `map:=...`。
 

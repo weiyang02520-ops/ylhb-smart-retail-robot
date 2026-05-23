@@ -1,11 +1,20 @@
 zlac8015d_canopen_controller:
   ros__parameters:
-    wheel_radius: 0.076
-    wheel_track: 0.25
+    # 车轮半径，单位：米。影响速度换算和里程计距离；实测轮直径后填“直径 / 2”。
+    wheel_radius: 0.0865
+    # 左右驱动轮接地点中心之间的距离，单位：米。影响原地旋转角速度和里程计转角。
+    wheel_track: 0.4008
+    # 底盘最大线速度，单位：米/秒。cmd_vel 超过该值会被限幅，调大前确认电机和场地安全。
     max_linear_speed: 0.6
+    # 底盘最大角速度，单位：弧度/秒。cmd_vel 超过该值会被限幅。
     max_angular_speed: 1.2
+    # 左轮方向系数。若前进指令下左轮实际反转，可在 1.0 和 -1.0 之间切换。
     left_direction: 1.0
+    # 右轮方向系数。若前进指令下右轮实际反转，可在 1.0 和 -1.0 之间切换。
     right_direction: -1.0
+    # 里程计父坐标系，通常保持 odom。
     odom_frame: odom
+    # 底盘坐标系，当前系统使用 base_footprint 作为平面运动基座。
     base_frame: base_footprint
+    # 是否由底盘控制器直接发布 odom -> base_frame 的 TF。bringup 中由 EKF 发布，通常保持 false。
     publish_tf: false

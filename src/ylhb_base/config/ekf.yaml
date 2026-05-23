@@ -1,19 +1,34 @@
-### ekf config file ###
+### EKF 融合配置 ###
+### 作用：融合轮式里程计 /odom 和 IMU /imu/data，并发布 odom -> base_footprint 的 TF。
+### 一般调参优先看 frequency、sensor_timeout、odom0_config、imu0_config；坐标系名称不要随意改。
 ekf_filter_node:
   ros__parameters:
+    # 是否使用仿真时间。真车运行保持 false；仿真或 rosbag 回放按需要改 true。
     use_sim_time: false
+    # 是否发布 world_frame -> base_link_frame 的 TF。bringup 中底盘控制器关闭 TF，由 EKF 统一发布。
     publish_tf: true
+    # EKF 输出频率，单位：Hz。过低会让导航反馈变慢，过高会增加 CPU 占用。
     frequency: 30.0
+    # 传感器超时时间，单位：秒。超过该时间没有新数据，该传感器会被临时忽略。
     sensor_timeout: 0.1
+    # 二维模式。差速小车在地面运动应保持 true，忽略 z/roll/pitch 等 3D 状态。
     two_d_mode: true
+    # TF 时间戳偏移，单位：秒。一般保持 0.0。
     transform_time_offset: 0.0
+    # 等待 TF 的超时时间，单位：秒。一般保持 0.0，避免阻塞滤波。
     transform_timeout: 0.0
+    # 是否打印诊断信息。调试传感器融合时可保持 true。
     print_diagnostics: true
+    # 是否输出详细 debug 文件/信息。正常运行保持 false。
     debug: false
 
+    # 全局地图坐标系。只定位/建图之外，EKF 这里通常不直接使用 map。
     map_frame: map
+    # 里程计坐标系，作为本 EKF 的 world_frame。
     odom_frame: odom
+    # 机器人底盘平面坐标系。
     base_link_frame: base_footprint
+    # EKF 输出所在世界坐标系。只融合里程计和 IMU 时通常保持 odom。
     world_frame: odom
 
     # 轮式里程计配置 (基于base_controller的/odom话题)
@@ -26,8 +41,11 @@ ekf_filter_node:
                    false, false, true,
                    false, false, false]
     odom0_queue_size: 10
+    # false 表示允许消息按 ROS 正常回调队列处理；需要最低延迟时可改 true。
     odom0_nodelay: false
+    # false 表示 /odom 已经是速度/位姿估计，不再做差分转换。
     odom0_differential: false
+    # false 表示不把第一帧作为相对零点重置。
     odom0_relative: false
 
     # IMU配置 (基于imu_driver的/imu/data话题)
@@ -42,4 +60,5 @@ ekf_filter_node:
     imu0_differential: false
     imu0_relative: true
     imu0_queue_size: 10
+    # true 表示从 IMU 线加速度中移除重力。当前未融合线加速度，保持该值即可。
     imu0_remove_gravitational_acceleration: true
